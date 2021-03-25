@@ -12,7 +12,7 @@ The package provides
 
 * [ocd](#ocd) : a simple box to select openocd scripts or custom scripts
 * [dbg](#dbg) : a graphical frontend to the gdb debugger
-* a [sample STM32 project](proj/REAME.md) to demonstrate the sdk use
+* a [sample STM32 project](proj/) to demonstrate the sdk use
 
 
 ## Install
