@@ -95,7 +95,7 @@ The install targets Linux (debian, ubuntu, raspbian)
 
 This is just a helper box for connection to a board. What it does is actually
 
-![](img/ocd.png)
+<p align="center"><img src="img/ocd.png"></p>
 
 
 ```
@@ -131,7 +131,7 @@ The box provides two panes
 It's a graphical frontend to the gdb debugger. The program can actually be 
 used to debug standard or microcontroller programs. 
 
-![](img/dbg.png)
+<p align="center"><img src="img/dbg.png"></p>
 
 It uses a config file named `.dbinit` (hidden file) which have to be at the 
 root of the project. For example, for the STM32 project, we have
