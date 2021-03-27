@@ -152,7 +152,7 @@ used to debug standard or microcontroller programs.
 
 <p align="center"><img src="img/dbg.png"></p>
 
-It uses a config file named `.dbinit` (hidden file) which have to be at the 
+It uses a config file named `.dbginit` (hidden file) which have to be at the 
 root of the project. For example, for the STM32 project, we have
 
 ```
