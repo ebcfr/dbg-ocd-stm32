@@ -72,6 +72,12 @@ The install targets Linux (debian, ubuntu, raspbian)
 
 	(don't forget the '.' and the ' ' in front of setup.sh)
 
+* connect to the board
+
+	```
+	ocd &
+	```
+	
 * compile
 
 	```
@@ -82,7 +88,7 @@ The install targets Linux (debian, ubuntu, raspbian)
 * load to the target
 
 	```
-	dbg main.elf
+	dbg main.elf &
 	```
 
 	You should be on the first line of the `main` function.
@@ -93,24 +99,24 @@ The install targets Linux (debian, ubuntu, raspbian)
 <a id="ocd"></a>
 ## About ocd
 
-This is just a helper box for connection to a board. What it does is actually
+This is just a helper box to connect to a board using openocd and reset it.
+The openocd log is displayed in a window while the entry provides a way to 
+interact with openocd directly, which can be useful while testing the 
+connection or writing a new connection script.
 
 <p align="center"><img src="img/ocd.png"></p>
 
-
-```
-openocd -f myscript.cfg
-```
-
-So one could skip it totally ...
-
 The box provides two panes
 
-* a connect pane which allows you to select the target board.
+* a connect pane which allows you to select the target.
+
+	The target list is made of target config files (`.cfg` files) 
 	
-	The list is made of available boards in the ~/.ocd/scripts/ (copied from $SDK/share/ocd/scripts/ the first time the program is used) and of the target boards in the openocd distribution.
+	* in the `config ` directory in the current directory (so that ocd should be run from the project root directory)
+	* in the `~/.ocd/scripts/`. These scripts are copied from $SDK/share/ocd/scripts/ the first time the program is used.
+	* in the openocd distribution.
 	
-	One can set a custom script using definitions in the openocd distribution. Here the exmple for the `ocd_stm32f411.cfg` script
+	One can set a custom script using definitions in the openocd distribution. Here the example for a STM32F411 script
 	
 	```
 	# get the interface and target in the openocd distribution
@@ -120,7 +126,20 @@ The box provides two panes
 	source [find target/stm32f4x.cfg]
 	```
 
-	At connection, the config file, the selected file is copied in `~/.ocd/scripts/` with a starting '_', which allow you to get easily the config files from the openocd distrib, rename and modify the initial script for our own use.
+	At connection, the config file, the selected file is copied in 
+	`~/.ocd/scripts/` with a starting '_', which allow you to get easily the 
+	config files from the openocd distrib, rename and modify the initial script 
+	for our own use. Selected files are remembered when ocd is terminated.
+	
+	The `Reset and halt target` button, a `cpu_reset_halt` generates a `reset halt` 
+	command. If the microcontroller doesn't halt, the configuration script should
+	provide the `reset-end` hook to help the microprocessor halting.
+	
+	```
+	$_TARGETNAME configure -event reset-end {
+		
+	}
+	```
 	
 * a flash pane, which should allow you to flash a file to be selected to the microcontroller through openocd (not needed for the STM32 project).
 

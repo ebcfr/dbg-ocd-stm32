@@ -4,8 +4,8 @@
 # A small utility box to connect to an embedded board using
 # OpenOCD.
 #
-# Allows to use standard scripts provided with openocd or custom
-# ones in your ~/.ocd/scripts/ config directory
+# Allows to use standard scripts provided with openocd or user scripts
+# in ~/.ocd/scripts/ or in the project config directory
 #
 # (C) 2016-2021 Eric Bouchare
 # 
@@ -280,14 +280,20 @@ proc Ocd::new {args} {
 		}
 	} rc
 	
-	set scripts [lsort [glob -tails -dir [getpath openocd]/share/openocd/scripts/board *.cfg]]
-	set customscripts [lsort [glob -tails -dir $::env(HOME)/.ocd/scripts *.cfg]]
-	
+	catch {
+		set localscripts [lsort [glob -tails -dir $::env(PWD)/config *.cfg]]
+		set userscripts [lsort [glob -tails -dir $::env(HOME)/.ocd/scripts *.cfg]]
+		set distscripts [lsort [glob -tails -dir [getpath openocd]/share/openocd/scripts/board *.cfg]]
+	} rc
+		
 	set self(openocd_dir)		[getpath openocd]
 	set self(label:connect) 	"Target not connected"
 	set self(data:connected) 	false
-	set self(data:script) 		[file tail [lindex $scripts 0]]; # updated with config file
-	set self(data:scripts)		[join [list $customscripts $scripts]]
+	set self(data:script) 		[file tail [lindex $distscripts 0]]; # updated with config file
+	set self(data:localscripts) $localscripts
+	set self(data:userscripts)  $userscripts
+	set self(data:distscripts)  $distscripts
+	set self(data:scripts)		[concat $localscripts $userscripts $distscripts]
 	set self(var:cmd)			{}
 	set self(var:cmd:hist)		{}
 	set self(var:cmd:hist:pos)	0
@@ -394,11 +400,15 @@ proc Ocd::connect {obj} {
 		$self(wid:top).e configure -state active
 		set self(label:connect) "Target connected"
 		catch {
-			if {![file exists "$::env(HOME)/.ocd/scripts/$self(data:script)"]} {
-				file copy -force -- [getpath openocd]/share/openocd/scripts/board/$self(data:script) $::env(HOME)/.ocd/scripts/_$self(data:script)
-			} else {
-				file copy -force -- $::env(HOME)/.ocd/scripts/$self(data:script) $::env(HOME)/.ocd/scripts/_$self(data:script)
+			set src $::env(HOME)/.ocd/scripts/$self(data:script)
+			if {[lsearch -exact $self(data:localscripts) $self(data:script)] != -1} {
+				set src $::env(PWD)/config/$self(data:script)
+			} elseif {[lsearch -exact $self(data:distscripts) $self(data:script)] != -1} {
+				set src [getpath openocd]/share/openocd/scripts/board/$self(data:script)
 			}
+
+			file copy -force -- $src $::env(HOME)/.ocd/scripts/_$self(data:script)
+
 			set self(data:io) [open "|openocd -f $::env(HOME)/.ocd/scripts/_$self(data:script) 2>@1" r]
 			fconfigure $self(data:io) -blocking 0
 			fileevent $self(data:io) readable [list ::Ocd::receive $obj]
@@ -477,7 +487,7 @@ proc Ocd::ev_cmd_transmit {obj} {
 proc Ocd::ev_cmd_reset {obj} {
 	upvar $obj self
 
-	set self(var:cmd) cpu_reset_halt
+	set self(var:cmd) "reset halt"
 	ev_cmd_transmit $obj
 	focus $self(wid:top).e
 }
@@ -504,7 +514,7 @@ proc Ocd::ev_ff_flash {obj} {
 	upvar $obj self
 	
 	if [file exists $self(flash:file)] {
-		set self(var:cmd) "flash_target $self(flash:file)"
+		set self(var:cmd) "flash write_image erase unlock $self(flash:file)"
 		ev_cmd_transmit $obj
 	}
 	
